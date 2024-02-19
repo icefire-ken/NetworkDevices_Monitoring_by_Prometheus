@@ -1,0 +1,48 @@
+version: "3"
+
+
+services:
+
+  prometheus:
+    image: prom/prometheus:v2.45.3
+    container_name: prometheus
+    restart: always
+    user: root
+    privileged: true
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/data/:/prometheus/
+      - /etc/localtime:/etc/localtime:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090
+    networks:
+      - monitoring-net
+
+  grafana:
+    image: grafana/grafana:10.3.1
+    container_name: grafana
+    restart: always
+    user: root
+    privileged: true
+    volumes:
+      - ./grafana/:/var/lib/grafana/
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - 80:3000
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring-net
+
+
+networks:
+
+  monitoring-net:
+    driver: bridge
+    name: monitoring-net
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.30.2.0/24
