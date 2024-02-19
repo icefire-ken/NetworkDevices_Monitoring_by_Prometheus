@@ -10,13 +10,53 @@ services:
     user: root
     privileged: true
     volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - ./prometheus/data/:/prometheus/
-      - /etc/localtime:/etc/localtime:ro
+      - ./prometheus/conf/prometheus.yml:/etc/prometheus/prometheus.yml:ro  # 配置文件
+      - ./prometheus/data/:/prometheus/  # 数据
+      - ./prometheus/rules/:/prometheus/rules/  # 规则
+      - /etc/localtime:/etc/localtime:ro  # 时间
     command:
-      - --config.file=/etc/prometheus/prometheus.yml
+      - --config.file=/etc/prometheus/prometheus.yml  # 指定配置文件，默认
+      - --storage.tsdb.path=/prometheus  # 数据存储目录，默认
+      - --storage.tsdb.retention.time=365d  # 数据保留时间
+      - --web.console.libraries=/usr/share/prometheus/console_libraries  # 指定页面组件，默认
+      - --web.console.templates=/usr/share/prometheus/consoles  # 指定页面存储路径，默认
+      - --web.enable-admin-api  # 开启API服务
+      - --web.enable-lifecycle  # 开启动态加载配置文件
     ports:
       - 9090:9090
+    networks:
+      - monitoring-net
+
+  snmp-exporter:
+    image: prom/snmp-exporter:v0.25.0
+    container_name: snmp-exporter
+    restart: always
+    volumes:
+      - ./snmp-exporter/snmp.yml:/etc/snmp_exporter/snmp.yml:ro  # 配置文件
+      - /etc/localtime:/etc/localtcd sime:ro  # 时间
+    command:
+      - --config.file=/etc/snmp_exporter/snmp.yml  # 指定配置文件，默认
+    ports:
+      - 9116:9116
+    networks:
+      - monitoring-net
+
+  alertmanager:
+    image: prom/alertmanager:v0.26.0
+    container_name: alertmanager
+    restart: always
+    user: root
+    privileged: true
+    volumes:
+      - ./alertmanager/conf/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro  # 配置文件
+      - ./alertmanager/data/:/var/lib/alertmanager/  # 数据
+      - /etc/localtime:/etc/localtime:ro  # 时间
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml  # 指定配置文件，默认
+      - --storage.path=/var/lib/alertmanager  # 数据存储目录
+      - --data.retention=365d  # 数据保留时间
+    ports:
+      - 9093:9093
     networks:
       - monitoring-net
 
@@ -27,8 +67,8 @@ services:
     user: root
     privileged: true
     volumes:
-      - ./grafana/:/var/lib/grafana/
-      - /etc/localtime:/etc/localtime:ro
+      - ./grafana/data/:/var/lib/grafana/  # 数据
+      - /etc/localtime:/etc/localtime:ro  # 时间
     ports:
       - 80:3000
     depends_on:
