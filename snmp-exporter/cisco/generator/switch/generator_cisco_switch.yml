@@ -1,0 +1,15 @@
+# generator.yml配置文件命名规则：generator_pinpai_leibie.yml
+auths:
+  cisco_switch:  # 认证模块名称
+    version: 2  # snmp版本：v2c
+    community: public  # snmp团体名称
+
+modules:
+  cisco_switch:
+    walk:
+      - interfaces
+      - ifXTable
+
+    max_repetitions: 50
+    retries: 3
+    timeout: 5

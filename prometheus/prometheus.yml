@@ -1,29 +1,37 @@
-# my global config
+# 全局配置
 global:
-  scrape_interval: 15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
-  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
-  # scrape_timeout is set to the global default (10s).
+  scrape_interval: 15s # 搜罗targets数据间隔时间，默认1m
+  evaluation_interval: 15s # 评估告警规则间隔时间，默认1m
+  scrape_timeout: 10s # 搜罗targets数据超时时间，默认10s
+  external_labels: # 额外的标签
+    monitor: "network devices monitoring"
 
-# Alertmanager configuration
+# 告警插件配置
 alerting:
-  alertmanagers:
-    - static_configs:
-        - targets:
-          # - alertmanager:9093
+  alertmanagers: # 启动告警插件
+    - static_configs: # 静态配置
+        - targets: # 告警目标
+          - alertmanager:9093 # 容器名称+端口
 
-# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+# 加载规则，并按照全局配置中的evaluation_interval定期评估规则
 rule_files:
-  # - "first_rules.yml"
-  # - "second_rules.yml"
+  - "/prometheus/rules/*.yml"
 
-# A scrape configuration containing exactly one endpoint to scrape:
-# Here it's Prometheus itself.
+# 搜罗数据配置
 scrape_configs:
-  # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
   - job_name: "prometheus"
-
-    # metrics_path defaults to '/metrics'
-    # scheme defaults to 'http'.
-
+    metrics_path: /metrics
+    scheme: http
     static_configs:
-      - targets: ["localhost:9090"]
+      - targets: [ "prometheus:9090" ]
+
+  - job_name: "snmp-exporter"
+    metrics_path: /snmp
+    scheme: http
+    static_configs:
+      - targets: [ "snmp-exporter:9116" ]
+    relabel_configs:
+      - source_labels: [ "__address__" ]
+        target_label: "__param_target"
+      - source_labels: [ "__param_target" ]
+        target_label: instance
